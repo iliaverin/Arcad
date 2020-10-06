@@ -1,167 +1,198 @@
 #include <iostream>
 #include <vector>
+#include <ctime>
+#include <thread>
+#include "windows.h"
+#include <conio.h>
 
 
 using namespace std;
+int mover2;
 class Game
 {
 private:
-    int move;
-    const int X = 30;
-    const int Y = 20;
+    const int X = 40;
+    const int Y = 40;
     vector<vector<char>> field;
 public:
-    void right();
-    void fieldcreation();
+
     void printfield();
     void start();
     void addMet();
     void down();
     void left();
+    void right();
 };
 
 
 
-void Game::fieldcreation()
+void Game::start()
 {
-
-
-    for (int i = 0; i < X; i++) {
-        vector<char> a;
-        for (int j = 0; j < Y; ++j) {
-
-
-            a.push_back(' ');
-
-
+    for (int i = 0; i < Y; i++)
+    {
+        vector<char> temp;
+        for (int j = 0; j < X; j++)
+        {
+            temp.push_back(' ');
         }
-        field.push_back(a);
-
+        field.push_back(temp);
     }
-
+    field[Y-1][X / 2] = '*';
+    field[Y - 1][(X / 2) + 1] = '*';
+    field[Y - 2][X / 2] = '*';
+    field[Y - 2][(X / 2) + 1] = '*';
+    field[Y - 3][X / 2] = '*';
+    field[Y - 3][(X / 2) + 1] = '*';
+    srand(time(NULL));
 }
 
 void Game::printfield()
 {
-    for (int i = 0; i < X; i++) {
-        vector<char> a;
-        for (int j = 0; j < Y; ++j) {
-
-
-            cout << field[i][j];
-
-
-        }
-        cout<<"\n";
-
-    }
-}
-
-void Game::start()
-{
-    for (int i = 0; i < X; i++)
+    system("cls");
+    for (int i = 0; i < Y; i++)
     {
-        for (int j = 0; j < Y; j++)
+        cout << '|';
+        for (int  j = 0;  j< X; j++)
         {
-            field[28][10] = '+';
-            field[29][11] = '+';
-            field[28][11] = '+';
-            field[29][10] = '+';
-
+            cout << field[i][j];
         }
+        cout << '|';
+        cout << endl;
     }
 }
 
 void Game::addMet()
 {
-    for (int i = 0; i < X; i++)
-    {
-        for (int j = 0; j < Y; j++)
-        {
-            int met = (rand() % 15 + 1);
-            field[0][met] = '*';
 
-        }
+      field[0][0 + rand() % X] = '&';
 
-    }
+
+
 }
 
 void Game::down()
 {
-    for (int i = 0; i < X; i++)
-    {
-        for (int j = 0; j < Y; j++)
+        for (int i = 0; i < Y; i++)
         {
-            if (field[i][j] == '*')
+            for (int  j = 0;  j< X; j++)
             {
-                int r;
-                r = field[i][j];
-                field[i + 1][j] = r;
-                field[i][j] = ' ';
-            }
-        }
-    }
-}
+                if ( j+1 < X ) {
+                    if (field[j][i] == '&')
+                    {
+                        field[j+1][i] = '&';
+                        field[j][i] = ' ';
+                        break;
+                    }
+                }
 
+            }
+
+        }
+
+
+}
 void Game::left()
 {
-    for (int i = 0; i < X; i++)
+    if (field[Y - 1][0] == '*')
+        return;
+    for (int j = Y - 3; j < Y; j++)
     {
-        for (int j = 0; j < Y; j++)
+        for (int i = 0; i < X; i++)
         {
-            if (field[i][j]== '*')
+            if (field[j][i] == '*')
             {
-                char temp = field[i][j];
-                field[i + 1][j] = temp;
-                field[i][j] = ' ';
-                move = 1;
+                field[j][i - 1] = '*';
+                field[j][i + 1] = ' ';
             }
-
         }
     }
 }
+
 void Game::right()
 {
-    for (int i = 0; i < X; i++)
+    if (field[Y - 1][X-1] == '*')
+        return;
+    for (int j = Y - 3; j < Y; j++)
     {
-        for (int j = 0; j < Y; j++)
+        for (int i = X - 1; i > 0; i--)
         {
-            if (field[i][j--]== '*')
+            if (field[j][i] == '*')
             {
-                char temp = field[i][j];
-                field[i - 1][j] = temp;
-                field[i][j] = ' ';
-                move = 1;
+                field[j][i + 1] = '*';
+                field[j][i - 1] = ' ';
             }
-
         }
     }
 }
-
-
 void mover() {
-    //int code = getch();
-    //if (code == 0 || code == 224)
-    //    code = getch();
-    //switch (code)
-    //{
-    //case 75://âëåâî
-    //    move2 = 1;
-    //    break;
-   // case 77://âïðàâî
-    //   move2 = 2;
-    //    break;
-    //}
+    while(true){
+    if(kbhit()) // слушатель нажатия на клаву
+        {
+            switch(getch()) // ждёт нажатия на клаву без Enter после этого
+                {
+                    case 72: //вверх
+                        mover2 = 1;
+                        break;
+                    case 80: //вниз
+                        mover2 = 2;
+                        break;
+                    case 75: //влево
+                         mover2 = 3;
+                         break;
+                    case 77: //вправо
+                         mover2 = 4;
+                         break;
+                            }
+                    }
+    }
 }
+/*void SpamMet(int *a)
+{
+    a = down();
+}*/
 int main()
 {
 
     Game go;
-
-    go.fieldcreation();
     go.start();
-    go.printfield();
+
     go.addMet();
-    go.left();
+    go.printfield();
+
+    /*Game *a = &go;
+
+    go.down();
+    a->down();*/
+
+    /*thread SpamMet(&Game::addMet, ref(go));
+    thread DownMet(&Game::down, ref(go));
+    DownMet.join();
+    SpamMet.join();
+    thread Checkclav(mover);
+    go.printfield();*/
+
+    /*for (int i = 0; i < 5; i++)
+     {
+        Sleep(500);
+        go.down();
+        go.printfield();
+     }
+    for (int i = 0; i < 40; i++){
+
+        Sleep(500); // ждать 5 секунд, время эта функция считает в тысячных долях секунды
+
+        go.left();
+        go.printfield();
+     }
+    for (int i = 0; i < 40; i++)
+        {
+            go.down();
+            Sleep(500);
+            go.printfield();
+
+        }*/
+
+
+
 
 }
