@@ -4,6 +4,9 @@
 #include <thread>
 #include "windows.h"
 #include <conio.h>
+#include <mutex>
+#include <cstring>
+#include <cstdlib>
 
 
 using namespace std;
@@ -13,6 +16,9 @@ class Game
 private:
     const int X = 40;
     const int Y = 40;
+    bool state = true;
+    mutable mutex mState;
+    mutable mutex mField;
     vector<vector<char>> field;
 public:
 
@@ -22,6 +28,7 @@ public:
     void down();
     void left();
     void right();
+    bool getstate();
 };
 
 
@@ -37,7 +44,7 @@ void Game::start()
         }
         field.push_back(temp);
     }
-    field[Y-1][X / 2] = '*';
+    field[Y - 1][X / 2] = '*';
     field[Y - 1][(X / 2) + 1] = '*';
     field[Y - 2][X / 2] = '*';
     field[Y - 2][(X / 2) + 1] = '*';
@@ -49,10 +56,11 @@ void Game::start()
 void Game::printfield()
 {
     system("cls");
+    std::lock_guard<std::mutex> lock(mField);
     for (int i = 0; i < Y; i++)
     {
         cout << '|';
-        for (int  j = 0;  j< X; j++)
+        for (int j = 0; j < X; j++)
         {
             cout << field[i][j];
         }
@@ -63,8 +71,8 @@ void Game::printfield()
 
 void Game::addMet()
 {
-
-      field[0][0 + rand() % X] = '&';
+    std::lock_guard<std::mutex> lock(mField);
+    field[0][0 + rand() % X] = '&';
 
 
 
@@ -72,27 +80,42 @@ void Game::addMet()
 
 void Game::down()
 {
-        for (int i = 0; i < Y; i++)
-        {
-            for (int  j = 0;  j< X; j++)
-            {
-                if ( j+1 < X ) {
-                    if (field[j][i] == '&')
-                    {
-                        field[j+1][i] = '&';
-                        field[j][i] = ' ';
-                        break;
-                    }
-                }
+    std::lock_guard<std::mutex> lock(mField);
 
+    for (int i = 0; i < X; i++)
+    {
+        for (int j = 0; j < Y - 1; j++)
+        {
+            if (field[j][i] == '&')
+            {
+                if (field[j+1][i] == '*')
+                {
+                    state = false;
+                    return;
+                }
+                field[j][i] = ' ';
+
+
+
+                if (field[Y - 1][i] == '&')
+                {
+                    field[Y - 1][i] = ' ';
+                }
+                else
+                {
+                    field[j + 1][i] = '&';
+                }
+                j++;
             }
 
         }
+    }
 
 
 }
 void Game::left()
 {
+    std::lock_guard<std::mutex> lock(mField);
     if (field[Y - 1][0] == '*')
         return;
     for (int j = Y - 3; j < Y; j++)
@@ -110,7 +133,8 @@ void Game::left()
 
 void Game::right()
 {
-    if (field[Y - 1][X-1] == '*')
+    std::lock_guard<std::mutex> lock(mField);
+    if (field[Y - 1][X - 1] == '*')
         return;
     for (int j = Y - 3; j < Y; j++)
     {
@@ -124,75 +148,87 @@ void Game::right()
         }
     }
 }
-void mover() {
-    while(true){
-    if(kbhit()) // слушатель нажатия на клаву
+
+bool Game::getstate()
+{
+    std::lock_guard<std::mutex> lock(mState);
+    return state;
+}
+
+void mover(Game&go) {
+
+    while (true) {
+        if (kbhit()) // ñëóøàòåëü íàæàòèÿ íà êëàâó
         {
-            switch(getch()) // ждёт нажатия на клаву без Enter после этого
-                {
-                    case 72: //вверх
-                        mover2 = 1;
-                        break;
-                    case 80: //вниз
-                        mover2 = 2;
-                        break;
-                    case 75: //влево
-                         mover2 = 3;
-                         break;
-                    case 77: //вправо
-                         mover2 = 4;
-                         break;
-                            }
-                    }
+            switch (getch()) // æä¸ò íàæàòèÿ íà êëàâó áåç Enter ïîñëå ýòîãî
+            {
+
+            case 75: //âëåâî
+                go.left();
+                break;
+            case 77: //âïðàâî
+                go.right();
+                break;
+
+            }
+        }
     }
 }
-/*void SpamMet(int *a)
+ void Print(Game& go)
 {
-    a = down();
-}*/
+     while (go.getstate())
+     {
+         go.printfield();
+         this_thread::sleep_for(chrono::milliseconds(100));
+     }
+
+
+
+}
+void CreetMet(Game&go)
+{
+    while (go.getstate())
+    {
+        this_thread::sleep_for(chrono::milliseconds(1000));
+        go.addMet();
+
+    }
+
+
+
+}
+void DownMetf(Game& go)
+{
+    while (go.getstate())
+    {
+        this_thread::sleep_for(chrono::milliseconds(1000));
+        go.down();
+
+    }
+
+}
 int main()
 {
 
     Game go;
     go.start();
-
     go.addMet();
     go.printfield();
-
-    /*Game *a = &go;
-
     go.down();
-    a->down();*/
 
-    /*thread SpamMet(&Game::addMet, ref(go));
-    thread DownMet(&Game::down, ref(go));
+    go.printfield();
+
+
+    thread Printer(Print, ref(go));
+    thread SpamMet(CreetMet, ref(go));
+    thread DownMet(DownMetf, ref(go));
+    thread Checkclav(mover, ref(go));
+    Checkclav.join();
     DownMet.join();
     SpamMet.join();
-    thread Checkclav(mover);
-    go.printfield();*/
-
-    /*for (int i = 0; i < 5; i++)
-     {
-        Sleep(500);
-        go.down();
-        go.printfield();
-     }
-    for (int i = 0; i < 40; i++){
-
-        Sleep(500); // ждать 5 секунд, время эта функция считает в тысячных долях секунды
-
-        go.left();
-        go.printfield();
-     }
-    for (int i = 0; i < 40; i++)
-        {
-            go.down();
-            Sleep(500);
-            go.printfield();
-
-        }*/
-
-
+    Printer.join();
 
 
 }
+
+
